@@ -128,7 +128,7 @@ class KnowledgeBase(object):
         printv("Retracting {!r}", 0, verbose, [fact])
         ####################################################
         # Student code goes here
-        
+
 
 class InferenceEngine(object):
     def fc_infer(self, fact, rule, kb):
@@ -140,9 +140,32 @@ class InferenceEngine(object):
             kb (KnowledgeBase) - A KnowledgeBase
 
         Returns:
-            Nothing            
+            Nothing
         """
         printv('Attempting to infer from {!r} and {!r} => {!r}', 1, verbose,
             [fact.statement, rule.lhs, rule.rhs])
         ####################################################
         # Student code goes here
+        #Infer is used to infer new rules. First use match to create possible bindings
+        #instantiate binds variable
+        #supported by list shows how an inferred rule or fact is created
+        potBinding = match(fact.statement, rule.lhs[0]) #check first statement in rule
+        listofBindings = []
+        if potBinding and len(rule.lhs) == 1: #if there is a binding AND the LHS = 1 item, implement the fact as is
+            for statement in rule.lhs[1:]:
+                newStatement = instantiate(statement, potBinding)
+                listofBindings.append(newStatement)
+            rhsStatement = instantiate(rule.rhs, potBinding)
+            newFact = Fact(rhsStatement, [[fact, rule]])
+            rule.supports_facts.append(newFact)
+            fact.supports_facts.append(newFact)
+            kb.kb_assert(newFact)
+        elif potBinding:      #if there is a binding and the LHS > 1 item, then the rest of the LHS needs to be implemented
+            for statement in rule.lhs[1:]:
+                newStatement = instantiate(statement, potBinding)
+                listofBindings.append(newStatement)
+            rhsStatement = instantiate(rule.rhs, potBinding)
+            newRule = Rule([listofBindings, rhsStatement], [[fact, rule]])
+            rule.supports_facts.append(newRule)
+            fact.supports_facts.append(newRule)
+            kb.kb_assert(newRule)
