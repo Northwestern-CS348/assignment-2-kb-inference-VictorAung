@@ -156,47 +156,39 @@ class KnowledgeBase(object):
                 for supportedFact in foundFact.supports_facts:
                     supportedFactIndex = self.facts.index(supportedFact)
                     supportedFact = self.facts[supportedFactIndex]
-                    for i in supportedFact.supported_by:
-                        if i[0] == foundFact:
-                            supportedFact.supported_by.remove(i)
+                    if foundFact in supportedFact.supported_by:
+                        supportedFact.supported_by.remove(foundFact)
                     #if len(supportedFact.supported_by) < 2: #if only supported by fact that we're removing
                     #    supportedFact.supported_by = []
-                    self.kb_retract_helper(supportedFact) #we need to recur to apply the same logic to this supportedFact
+                        self.kb_retract_helper(supportedFact) #we need to recur to apply the same logic to this supportedFact
                 for supportedRule in foundFact.supports_rules:
-                    supportedRuleIndex = self.rules.index(supportedRule)
-                    supportedRule = self.rules[supportedRuleIndex]
-                    for i in supportedRule.supported_by:
-                        if i[0] == foundFact:
-                            supportedRule.supported_by.remove(i)
+                    if foundFact in supportedRule.supported_by:
+                        supportedRule.supported_by.remove(foundFact)
                     #    if len(supportedRule.supported_by) < 2:
                     #        supportedRule.supported_by = []
-                    self.kb_retract_helper(supportedRule)
-                self.facts.remove(foundFact) #finally, we can remove the original fact
+                        self.kb_retract_helper(supportedRule)
+                self.facts.remove(fact) #finally, we can remove the original fact
 
     def kb_retract_helper(self, fact_or_rule): #we need a helper function to take in rules and not change the way things are asserted
 
         #if not fact_or_rule.asserted:
         if fact_or_rule.name == 'rule' and fact_or_rule in self.rules:
-            ruleIndex = self.rules.index(fact_or_rule)
-            foundRule = self.rules[ruleIndex]
+            ruleIndex = self.facts.index(fact_or_rule)
+            foundRule = self.facts[ruleIndex]
             if foundRule.supported_by == []:
                 ruleIndex = self.rules.index(fact_or_rule)
                 foundRule = self.rules[ruleIndex]
                 for supportedFact in foundRule.supports_facts:
                     supportedFactIndex = self.facts.index(supportedFact)
                     supportedFact = self.facts[supportedFactIndex]
-                    for i in supportedFact.supported_by:
-                        if i[1] == foundRule:
-                            supportedFact.supported_by.remove(i) #we need to recur to apply the same logic to this supportedFact
-                    self.kb_retract_helper(supportedFact)
+                    if foundRule in supportedFact.supported_by:
+                        supportedFact.supported_by.remove(foundRule)
+                        self.kb_retract_helper(supportedFact) #we need to recur to apply the same logic to this supportedFact
                 for supportedRule in foundRule.supports_rules:
-                    supportedRuleIndex = self.rules.index(supportedRule)
-                    supportedRule = self.rules[supportedRuleIndex]
-                    for i in supportedRule.supported_by:
-                        if i[1] == foundRule:
-                            supportedRule.supported_by.remove(i)
-                    self.kb_retract_helper(supportedRule)
-                self.rules.remove(foundRule) #finally, we can remove the original fact
+                    if foundRule in supportedRule.supported_by:
+                        supportedRule.supported_by.remove(foundRule)
+                        self.kb_retract_helper(supportedRule)
+                self.facts.remove(fact_or_rule) #finally, we can remove the original fact
         elif fact_or_rule in self.facts:
             factIndex = self.facts.index(fact_or_rule)
             foundFact = self.facts[factIndex]
@@ -204,22 +196,18 @@ class KnowledgeBase(object):
                 for supportedFact in foundFact.supports_facts:
                     supportedFactIndex = self.facts.index(supportedFact)
                     supportedFact = self.facts[supportedFactIndex]
-                    for i in supportedFact.supported_by:
-                        if i[0] == foundFact:
-                            supportedFact.supported_by.remove(i)
+                    if foundFact in supportedFact.supported_by:
+                        supportedFact.supported_by.remove(foundFact)
                     #if len(supportedFact.supported_by) < 2: #if only supported by fact that we're removing
                     #    supportedFact.supported_by = []
-                    self.kb_retract_helper(supportedFact) #we need to recur to apply the same logic to this supportedFact
+                        self.kb_retract_helper(supportedFact) #we need to recur to apply the same logic to this supportedFact
                 for supportedRule in foundFact.supports_rules:
-                    supportedRuleIndex = self.rules.index(supportedRule)
-                    supportedRule = self.rules[supportedRuleIndex]
-                    for i in supportedRule.supported_by:
-                        if i[0] == foundFact:
-                            supportedRule.supported_by.remove(i)
+                    if foundFact in supportedRule.supported_by:
+                        supportedRule.supported_by.remove(foundFact)
                     #    if len(supportedRule.supported_by) < 2:
                     #        supportedRule.supported_by = []
-                    self.kb_retract_helper(supportedRule)
-                self.facts.remove(foundFact) #finally, we can remove the original fact
+                        self.kb_retract_helper(supportedRule)
+                self.facts.remove(fact_or_rule) #finally, we can remove the original fact
 
 
 
@@ -263,6 +251,6 @@ class InferenceEngine(object):
                 listofBindings.append(newStatement)
             rhsStatement = instantiate(rule.rhs, potBinding)
             newRule = Rule([listofBindings, rhsStatement], [[fact, rule]])
-            rule.supports_rules.append(newRule)
-            fact.supports_rules.append(newRule)
+            rule.supports_facts.append(newRule)
+            fact.supports_facts.append(newRule)
             kb.kb_assert(newRule)
