@@ -128,6 +128,103 @@ class KnowledgeBase(object):
         printv("Retracting {!r}", 0, verbose, [fact])
         ####################################################
         # Student code goes here
+        #when removing fact, you also need to remove all facts and rules that were Inferred
+        # but only if those inferred facts were not supported by other facts
+        #An asserted fact should only be removed if it is unsupported.
+        #An asserted rule should never be removed.
+        #
+        #
+        # If fact is not asserted, do nothing because it will be inferred againself.
+        # If fact is asserted, we must continue
+        # if fact is asserted, but also is supported,
+        # we just need to change asserted to False
+        # if fact is asserted but not supported, we have to remove the fact
+        #and remove everything that has been inferred from that
+        if fact not in self.facts: #if fact is not found
+            return
+        elif fact.name == 'fact': #fact is found
+            factIndex = self.facts.index(fact)
+            foundFact = self.facts[factIndex]
+            #if found fact is not asserted, do nothing
+            if foundFact.asserted == False:
+                return
+            if foundFact.supported_by: #if foundfact is supported by anything, we can leave it but we have to remove its assertion
+                if foundFact.asserted:
+                    foundFact.asserted = False
+                    return
+            if foundFact.supported_by == []: #if found fact is not supported by anything, we must remove it and all inferred facts
+                for supportedFact in foundFact.supports_facts:
+                    supportedFactIndex = self.facts.index(supportedFact)
+                    supportedFact = self.facts[supportedFactIndex]
+                    for i in supportedFact.supported_by:
+                        if i[0] == foundFact:
+                            supportedFact.supported_by.remove(i)
+                    #if len(supportedFact.supported_by) < 2: #if only supported by fact that we're removing
+                    #    supportedFact.supported_by = []
+                    self.kb_retract_helper(supportedFact) #we need to recur to apply the same logic to this supportedFact
+                for supportedRule in foundFact.supports_rules:
+                    supportedRuleIndex = self.rules.index(supportedRule)
+                    supportedRule = self.rules[supportedRuleIndex]
+                    for i in supportedRule.supported_by:
+                        if i[0] == foundFact:
+                            supportedRule.supported_by.remove(i)
+                    #    if len(supportedRule.supported_by) < 2:
+                    #        supportedRule.supported_by = []
+                    self.kb_retract_helper(supportedRule)
+                self.facts.remove(foundFact) #finally, we can remove the original fact
+
+    def kb_retract_helper(self, fact_or_rule): #we need a helper function to take in rules and not change the way things are asserted
+
+        #if not fact_or_rule.asserted:
+        if fact_or_rule.name == 'rule' and fact_or_rule in self.rules:
+            ruleIndex = self.rules.index(fact_or_rule)
+            foundRule = self.rules[ruleIndex]
+            if foundRule.supported_by == []:
+                ruleIndex = self.rules.index(fact_or_rule)
+                foundRule = self.rules[ruleIndex]
+                for supportedFact in foundRule.supports_facts:
+                    supportedFactIndex = self.facts.index(supportedFact)
+                    supportedFact = self.facts[supportedFactIndex]
+                    for i in supportedFact.supported_by:
+                        if i[1] == foundRule:
+                            supportedFact.supported_by.remove(i) #we need to recur to apply the same logic to this supportedFact
+                    self.kb_retract_helper(supportedFact)
+                for supportedRule in foundRule.supports_rules:
+                    supportedRuleIndex = self.rules.index(supportedRule)
+                    supportedRule = self.rules[supportedRuleIndex]
+                    for i in supportedRule.supported_by:
+                        if i[1] == foundRule:
+                            supportedRule.supported_by.remove(i)
+                    self.kb_retract_helper(supportedRule)
+                self.rules.remove(foundRule) #finally, we can remove the original fact
+        elif fact_or_rule in self.facts:
+            factIndex = self.facts.index(fact_or_rule)
+            foundFact = self.facts[factIndex]
+            if foundFact.supported_by == []: #if found fact is not supported by anything, we must remove it and all inferred facts
+                for supportedFact in foundFact.supports_facts:
+                    supportedFactIndex = self.facts.index(supportedFact)
+                    supportedFact = self.facts[supportedFactIndex]
+                    for i in supportedFact.supported_by:
+                        if i[0] == foundFact:
+                            supportedFact.supported_by.remove(i)
+                    #if len(supportedFact.supported_by) < 2: #if only supported by fact that we're removing
+                    #    supportedFact.supported_by = []
+                    self.kb_retract_helper(supportedFact) #we need to recur to apply the same logic to this supportedFact
+                for supportedRule in foundFact.supports_rules:
+                    supportedRuleIndex = self.rules.index(supportedRule)
+                    supportedRule = self.rules[supportedRuleIndex]
+                    for i in supportedRule.supported_by:
+                        if i[0] == foundFact:
+                            supportedRule.supported_by.remove(i)
+                    #    if len(supportedRule.supported_by) < 2:
+                    #        supportedRule.supported_by = []
+                    self.kb_retract_helper(supportedRule)
+                self.facts.remove(foundFact) #finally, we can remove the original fact
+
+
+
+
+
 
 
 class InferenceEngine(object):
